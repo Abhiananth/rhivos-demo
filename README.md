@@ -4,6 +4,8 @@ A real-time web dashboard backed by actual Podman containers demonstrating how a
 
 **Not a simulation.** Real containers. Real cgroup enforcement. Real process supervision. Runs on your Mac in under 5 minutes.
 
+> **Runs locally.** This is a local demo — `http://localhost:5173` only. It requires your Mac to host both the Podman containers and the web server. To share it remotely, use [ngrok](https://ngrok.com/) to tunnel the port, or deploy to a Linux cloud VM. A hosted version via MicroShift + OpenShift is planned for Phase 2.
+
 Built to understand and demonstrate [RHIVOS](https://www.redhat.com/en/technologies/automotive) — Red Hat's ISO 26262 ASIL-B certified Linux OS for automotive HPC units.
 
 👉 **[automotive-linux-simulations](https://github.com/Abhiananth/automotive-linux-simulations)** — the terminal simulation series this builds on.
