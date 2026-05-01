@@ -12,7 +12,10 @@ from fastapi.middleware.cors import CORSMiddleware
 # add backend dir to path so scenarios can import podman_client
 sys.path.insert(0, os.path.dirname(__file__))
 
-from scenarios import mixed_criticality, bluechi, ota, memory_isolation, startup_chain, greenboot
+from scenarios import (
+    mixed_criticality, bluechi, ota, memory_isolation, startup_chain, greenboot,
+    feature_on_demand, temporal_isolation, spatial_isolation, ipc_demo,
+)
 
 app = FastAPI(title="RHIVOS Demo API")
 
@@ -69,6 +72,10 @@ async def websocket_endpoint(ws: WebSocket):
             "scenario4": memory_isolation.get_state(),
             "scenario5": startup_chain.get_state(),
             "scenario6": greenboot.get_state(),
+            "scenario7": temporal_isolation.get_state(),
+            "scenario8": feature_on_demand.get_state(),
+            "scenario9": spatial_isolation.get_state(),
+            "scenario10": ipc_demo.get_state(),
         }))
         while True:
             # just keep alive — all actions go through REST
@@ -261,3 +268,101 @@ async def s6_state():
 @app.get("/health")
 def health():
     return {"status": "ok"}
+
+
+# ── Scenario 7 endpoints ──────────────────────────────────────────────────────
+
+@app.post("/scenario7/start")
+async def s7_start():
+    asyncio.create_task(temporal_isolation.start(broadcast))
+    return {"status": "starting"}
+
+@app.post("/scenario7/stop")
+async def s7_stop():
+    asyncio.create_task(temporal_isolation.stop(broadcast))
+    return {"status": "stopping"}
+
+@app.post("/scenario7/storm/start")
+async def s7_storm_start():
+    asyncio.create_task(temporal_isolation.start_stress(broadcast))
+    return {"status": "storm starting"}
+
+@app.post("/scenario7/storm/stop")
+async def s7_storm_stop():
+    asyncio.create_task(temporal_isolation.stop_stress(broadcast))
+    return {"status": "storm stopping"}
+
+@app.get("/scenario7/state")
+async def s7_state():
+    return temporal_isolation.get_state()
+
+
+# ── Scenario 8 endpoints ──────────────────────────────────────────────────────
+
+@app.post("/scenario8/start")
+async def s8_start():
+    asyncio.create_task(feature_on_demand.start(broadcast))
+    return {"status": "starting"}
+
+@app.post("/scenario8/stop")
+async def s8_stop():
+    asyncio.create_task(feature_on_demand.stop(broadcast))
+    return {"status": "stopping"}
+
+@app.post("/scenario8/update")
+async def s8_update():
+    asyncio.create_task(feature_on_demand.push_update(broadcast))
+    return {"status": "update starting"}
+
+@app.get("/scenario8/state")
+async def s8_state():
+    return feature_on_demand.get_state()
+
+
+# ── Scenario 9 endpoints ──────────────────────────────────────────────────────
+
+@app.post("/scenario9/start")
+async def s9_start():
+    asyncio.create_task(spatial_isolation.start(broadcast))
+    return {"status": "starting"}
+
+@app.post("/scenario9/stop")
+async def s9_stop():
+    asyncio.create_task(spatial_isolation.stop(broadcast))
+    return {"status": "stopping"}
+
+@app.post("/scenario9/probe")
+async def s9_probe():
+    asyncio.create_task(spatial_isolation.run_probe(broadcast))
+    return {"status": "probing"}
+
+@app.get("/scenario9/state")
+async def s9_state():
+    return spatial_isolation.get_state()
+
+
+# ── Scenario 10 endpoints ─────────────────────────────────────────────────────
+
+@app.post("/scenario10/start")
+async def s10_start():
+    asyncio.create_task(ipc_demo.start(broadcast))
+    return {"status": "starting"}
+
+@app.post("/scenario10/stop")
+async def s10_stop():
+    asyncio.create_task(ipc_demo.stop(broadcast))
+    return {"status": "stopping"}
+
+@app.post("/scenario10/read")
+async def s10_read():
+    asyncio.create_task(ipc_demo.qm_read(broadcast))
+    return {"status": "read triggered"}
+
+@app.post("/scenario10/write_attempt")
+async def s10_write():
+    asyncio.create_task(ipc_demo.qm_write_attempt(broadcast))
+    return {"status": "write attempt triggered"}
+
+@app.get("/scenario10/state")
+async def s10_state():
+    return ipc_demo.get_state()

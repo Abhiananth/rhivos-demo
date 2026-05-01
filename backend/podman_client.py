@@ -28,6 +28,7 @@ def run_container(
     memory_mb: Optional[int] = None,
     port: Optional[int] = None,
     host_port: Optional[int] = None,
+    network: Optional[str] = None,
     detach: bool = True,
 ) -> bool:
     cmd = ["podman", "run", "--name", name, "--rm"]
@@ -44,6 +45,8 @@ def run_container(
         cmd += ["--memory", f"{memory_mb}m"]
     if port and host_port:
         cmd += ["-p", f"{host_port}:{port}"]
+    if network is not None:
+        cmd += ["--network", network]
     cmd.append(image)
     r = _run(cmd, check=False)
     return r.returncode == 0
@@ -109,6 +112,37 @@ def image_exists(tag: str) -> bool:
 def remove_container(name: str) -> bool:
     r = _run(["podman", "rm", "-f", name], check=False)
     return r.returncode == 0
+
+
+def exec_in_container(name: str, cmd_args: list[str], timeout: int = 8) -> tuple[int, str]:
+    """Run a command inside a running container. Returns (returncode, stdout+stderr)."""
+    import subprocess as _sp
+    r = _sp.run(
+        ["podman", "exec", name] + cmd_args,
+        capture_output=True, text=True, timeout=timeout
+    )
+    return r.returncode, (r.stdout + r.stderr).strip()
+
+
+def get_container_ip(name: str, network: str) -> Optional[str]:
+    r = _run(
+        ["podman", "inspect", name,
+         "--format", "{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}"],
+        check=False
+    )
+    if r.returncode == 0:
+        ip = r.stdout.strip()
+        return ip if ip else None
+    return None
+
+
+def create_network(name: str) -> bool:
+    r = _run(["podman", "network", "create", name], check=False)
+    return r.returncode == 0
+
+
+def remove_network(name: str):
+    _run(["podman", "network", "rm", "-f", name], check=False)
 
 
 def cleanup(*names: str):

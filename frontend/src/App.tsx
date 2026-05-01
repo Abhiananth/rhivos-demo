@@ -5,18 +5,35 @@ import OTAUpdate from './components/OTAUpdate'
 import MemoryIsolation from './components/MemoryIsolation'
 import StartupChain from './components/StartupChain'
 import Greenboot from './components/Greenboot'
+import TemporalIsolation from './components/TemporalIsolation'
+import FeatureOnDemand from './components/FeatureOnDemand'
+import SpatialIsolation from './components/SpatialIsolation'
+import IPCDemo from './components/IPCDemo'
+import ArchitectureEvolution from './components/ArchitectureEvolution'
 import './App.css'
 
 export type WsMessage = { type: string; [key: string]: unknown }
 
 const TABS = [
-  { id: 'mc',    label: 'Mixed Criticality',     sub: 'Scenario 1' },
-  { id: 'bc',    label: 'BlueChi Orchestration',  sub: 'Scenario 2' },
-  { id: 'ota',   label: 'OTA Update',             sub: 'Scenario 3' },
-  { id: 'mem',   label: 'Memory Isolation',       sub: 'Scenario 4' },
-  { id: 'boot',  label: 'Startup Dependencies',   sub: 'Scenario 5' },
-  { id: 'green', label: 'Greenboot Health Gate',  sub: 'Scenario 6' },
+  { id: 'arch',   label: 'Architecture Evolution',  sub: 'Overview',    group: 'intro' },
+  { id: 'mc',     label: 'CPU Isolation',            sub: 'Scenario 1',  group: 'isolation' },
+  { id: 'mem',    label: 'Memory Isolation',         sub: 'Scenario 4',  group: 'isolation' },
+  { id: 'temp',   label: 'Temporal (PREEMPT_RT)',    sub: 'Scenario 7',  group: 'isolation' },
+  { id: 'spatial',label: 'Spatial (Namespaces)',     sub: 'Scenario 9',  group: 'isolation' },
+  { id: 'bc',     label: 'BlueChi Orchestration',   sub: 'Scenario 2',  group: 'orchestration' },
+  { id: 'boot',   label: 'Startup Dependencies',    sub: 'Scenario 5',  group: 'orchestration' },
+  { id: 'ipc',    label: 'Controlled IPC',          sub: 'Scenario 10', group: 'orchestration' },
+  { id: 'ota',    label: 'OS OTA Update',           sub: 'Scenario 3',  group: 'updates' },
+  { id: 'fod',    label: 'Feature-on-Demand',       sub: 'Scenario 8',  group: 'updates' },
+  { id: 'green',  label: 'Greenboot Health Gate',   sub: 'Scenario 6',  group: 'updates' },
 ]
+
+const GROUP_COLORS: Record<string, string> = {
+  intro: '#6b7280',
+  isolation: '#ee0000',
+  orchestration: '#3b82f6',
+  updates: '#10b981',
+}
 
 export default function App() {
   const [tab, setTab]         = useState('mc')
@@ -74,14 +91,15 @@ export default function App() {
         </div>
       </header>
 
-      <nav className="tab-bar">
+      <nav className="tab-bar" style={{ flexWrap: 'wrap', rowGap: 0 }}>
         {TABS.map(t => (
           <button
             key={t.id}
             className={`tab-btn ${tab === t.id ? 'active' : ''}`}
             onClick={() => setTab(t.id)}
+            style={tab === t.id ? { borderBottomColor: GROUP_COLORS[t.group] } : {}}
           >
-            <span className="tab-sub">{t.sub}</span>
+            <span className="tab-sub" style={{ color: GROUP_COLORS[t.group], opacity: tab === t.id ? 1 : 0.5 }}>{t.sub}</span>
             <span className="tab-label">{t.label}</span>
           </button>
         ))}
@@ -113,12 +131,17 @@ export default function App() {
       </div>
 
       <main className="app-main">
-        {tab === 'mc'    && <MixedCriticality lastMsg={lastMsg} send={send} />}
-        {tab === 'bc'    && <BlueChi          lastMsg={lastMsg} send={send} />}
-        {tab === 'ota'   && <OTAUpdate        lastMsg={lastMsg} send={send} />}
-        {tab === 'mem'   && <MemoryIsolation  lastMsg={lastMsg} send={send} />}
-        {tab === 'boot'  && <StartupChain     lastMsg={lastMsg} send={send} />}
-        {tab === 'green' && <Greenboot        lastMsg={lastMsg} send={send} />}
+        {tab === 'arch'    && <ArchitectureEvolution />}
+        {tab === 'mc'      && <MixedCriticality  lastMsg={lastMsg} send={send} />}
+        {tab === 'bc'      && <BlueChi            lastMsg={lastMsg} send={send} />}
+        {tab === 'ota'     && <OTAUpdate          lastMsg={lastMsg} send={send} />}
+        {tab === 'mem'     && <MemoryIsolation    lastMsg={lastMsg} send={send} />}
+        {tab === 'boot'    && <StartupChain       lastMsg={lastMsg} send={send} />}
+        {tab === 'green'   && <Greenboot          lastMsg={lastMsg} send={send} />}
+        {tab === 'temp'    && <TemporalIsolation  lastMsg={lastMsg} send={send} />}
+        {tab === 'fod'     && <FeatureOnDemand    lastMsg={lastMsg} send={send} />}
+        {tab === 'spatial' && <SpatialIsolation   lastMsg={lastMsg} send={send} />}
+        {tab === 'ipc'     && <IPCDemo            lastMsg={lastMsg} send={send} />}
       </main>
     </div>
   )
