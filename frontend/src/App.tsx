@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import MixedCriticality from './components/MixedCriticality'
 import BlueChi from './components/BlueChi'
 import OTAUpdate from './components/OTAUpdate'
+import MemoryIsolation from './components/MemoryIsolation'
 import './App.css'
 
 export type WsMessage = { type: string; [key: string]: unknown }
@@ -10,6 +11,7 @@ const TABS = [
   { id: 'mc',  label: 'Mixed Criticality',    sub: 'Scenario 1' },
   { id: 'bc',  label: 'BlueChi Orchestration', sub: 'Scenario 2' },
   { id: 'ota', label: 'OTA Update',            sub: 'Scenario 3' },
+  { id: 'mem', label: 'Memory Isolation',      sub: 'Scenario 4' },
 ]
 
 export default function App() {
@@ -110,6 +112,7 @@ export default function App() {
         {tab === 'mc'  && <MixedCriticality lastMsg={lastMsg} send={send} />}
         {tab === 'bc'  && <BlueChi          lastMsg={lastMsg} send={send} />}
         {tab === 'ota' && <OTAUpdate        lastMsg={lastMsg} send={send} />}
+        {tab === 'mem' && <MemoryIsolation  lastMsg={lastMsg} send={send} />}
       </main>
     </div>
   )

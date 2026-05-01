@@ -25,6 +25,7 @@ def run_container(
     env: Optional[dict] = None,
     cpuset_cpus: Optional[str] = None,
     cpus: Optional[float] = None,
+    memory_mb: Optional[int] = None,
     port: Optional[int] = None,
     host_port: Optional[int] = None,
     detach: bool = True,
@@ -39,6 +40,8 @@ def run_container(
         cmd += ["--cpuset-cpus", cpuset_cpus]
     if cpus is not None:
         cmd += ["--cpus", str(cpus)]
+    if memory_mb is not None:
+        cmd += ["--memory", f"{memory_mb}m"]
     if port and host_port:
         cmd += ["-p", f"{host_port}:{port}"]
     cmd.append(image)

@@ -12,7 +12,7 @@ from fastapi.middleware.cors import CORSMiddleware
 # add backend dir to path so scenarios can import podman_client
 sys.path.insert(0, os.path.dirname(__file__))
 
-from scenarios import mixed_criticality, bluechi, ota
+from scenarios import mixed_criticality, bluechi, ota, memory_isolation
 
 app = FastAPI(title="RHIVOS Demo API")
 
@@ -66,6 +66,7 @@ async def websocket_endpoint(ws: WebSocket):
             "scenario1": mixed_criticality.get_state(),
             "scenario2": bluechi.get_state(),
             "scenario3": ota.get_state(),
+            "scenario4": memory_isolation.get_state(),
         }))
         while True:
             # just keep alive — all actions go through REST
@@ -175,6 +176,33 @@ async def s3_fault():
 @app.get("/scenario3/state")
 async def s3_state():
     return ota.get_state()
+
+
+# ── Scenario 4 endpoints ──────────────────────────────────────────────────────
+
+@app.post("/scenario4/start")
+async def s4_start():
+    asyncio.create_task(memory_isolation.start(broadcast))
+    return {"status": "starting"}
+
+@app.post("/scenario4/stop")
+async def s4_stop():
+    asyncio.create_task(memory_isolation.stop(broadcast))
+    return {"status": "stopping"}
+
+@app.post("/scenario4/leak/start")
+async def s4_leak_start():
+    asyncio.create_task(memory_isolation.start_leak(broadcast))
+    return {"status": "leak starting"}
+
+@app.post("/scenario4/leak/stop")
+async def s4_leak_stop():
+    asyncio.create_task(memory_isolation.stop_leak(broadcast))
+    return {"status": "leak stopping"}
+
+@app.get("/scenario4/state")
+async def s4_state():
+    return memory_isolation.get_state()
 
 
 # ── health ────────────────────────────────────────────────────────────────────

@@ -15,7 +15,7 @@ CHIPS = [
     {"id": "adas",    "name": "demo-adas",    "image": "demo-asil-b",
      "criticality": "ASIL-B", "port": 8201,
      "env": {"SERVICE_NAME": "lane-keep-assist", "CRITICALITY": "ASIL-B"},
-     "cpuset_cpus": "0"},
+     "cpus": 0.4},
     {"id": "ivi",     "name": "demo-ivi",     "image": "demo-qm",
      "criticality": "QM",     "port": 8202,
      "env": {"SERVICE_NAME": "media-player", "CRITICALITY": "QM"},
