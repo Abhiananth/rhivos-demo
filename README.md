@@ -144,7 +144,7 @@ containers/
 | Phase | What | Why |
 |-------|------|-----|
 | Phase 2 | MicroShift on-device + OpenShift in cloud | Real car-to-cloud GitOps — push a config change in OpenShift, it propagates to the "vehicle" |
-| Phase 3 | Actual hardware (Raspberry Pi / Renesas R-Car/ Qualcomm/ NXP) | Full end-to-end with real embedded Linux |
+| Phase 3 | Actual hardware (Raspberry Pi / Renesas R-Car/ Qualcomm/ NXP) | Full end-to-end with real embedded safe Linux |
 
 ---
 
