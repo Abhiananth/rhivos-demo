@@ -29,6 +29,7 @@ _state: dict = {
     "asil_status": "stopped",
     "attacker_status": "stopped",
     "asil_latency": [],
+    "attacker_latency": [],
     "asil_uptime_s": 0,
     "asil_deadline_misses": 0,
     "cpu_attack": False,
@@ -71,7 +72,8 @@ async def start(broadcast):
     podman.remove_network(NET_NAME)
     _state.update({
         "running": True, "asil_status": "starting", "attacker_status": "starting",
-        "asil_latency": [], "asil_uptime_s": 0, "asil_deadline_misses": 0,
+        "asil_latency": [], "attacker_latency": [], "asil_uptime_s": 0,
+        "asil_deadline_misses": 0,
         "cpu_attack": False, "mem_attack": False, "temporal_attack": False,
         "spatial_probe_result": None, "spatial_probe_ip": None,
         "attacker_mem_mb": 0.0, "log": [], "error": None,
@@ -144,15 +146,20 @@ async def _poll_loop(broadcast):
             except Exception:
                 _state["asil_status"] = "unreachable"
 
-            # poll attacker for memory info
+            # poll attacker for memory info + latency
+            t2 = time.time()
             try:
                 r2 = await client.get(f"http://localhost:{ATK_PORT}/health")
+                ms2 = round((time.time() - t2) * 1000, 1)
                 if r2.status_code == 200:
                     _state["attacker_status"] = "healthy"
                     _state["attacker_mem_mb"] = r2.json().get("memory_mb", 0)
+                    _state["attacker_latency"] = (_state["attacker_latency"] + [ms2])[-80:]
             except Exception:
-                # OOM-killed — attacker crashed
-                if _state["mem_attack"]:
+                # OOM-killed or unreachable — record spike
+                spike = 500.0 if _state["mem_attack"] else 200.0
+                _state["attacker_latency"] = (_state["attacker_latency"] + [spike])[-80:]
+                if _state["mem_attack"] and _state["attacker_status"] != "oom-killed":
                     _state["attacker_status"] = "oom-killed"
                     _log("💥 ci-attacker OOM-killed by kernel (memory limit enforced)")
                     _log("   ci-asil memory: UNCHANGED  ✅")
