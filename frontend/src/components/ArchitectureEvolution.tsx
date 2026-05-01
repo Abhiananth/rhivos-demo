@@ -3,12 +3,12 @@ import { useState } from 'react'
 const STAGES = [
   {
     id: 'ecu',
-    era: 'Yesterday',
+    era: 'Traditional',
     label: 'Dedicated ECU Hardware',
-    year: '< 2020',
+    year: 'Legacy',
     color: '#6b7280',
     description: 'Each function runs on its own dedicated microcontroller. ADAS ECU, IVI ECU, Gateway ECU — separate silicon, separate supply chains, separate software teams.',
-    metrics: { cost: '$$$$', weight: '8–12 kg wiring', update: 'Factory recall', teams: '10+ separate', boot: '45–90 s' },
+    metrics: { cost: 'High', update: 'Factory recall', teams: '10+ separate', scale: 'New ECU per feature' },
     nodes: [
       { label: 'ADAS ECU', icon: '🚗', color: '#dc2626', sub: 'Dedicated chip\nARM Cortex-R5' },
       { label: 'IVI ECU', icon: '🎵', color: '#7c3aed', sub: 'Dedicated chip\nARM Cortex-A53' },
@@ -21,10 +21,10 @@ const STAGES = [
     id: 'vm',
     era: 'Transition',
     label: 'Hypervisor + VMs',
-    year: '2020–2023',
+    year: 'In progress',
     color: '#f59e0b',
     description: 'A Type-1 hypervisor (AUTOSAR, QNX, or Xen) consolidates workloads onto fewer physical boards. Each VM is fully isolated but carries a full OS stack.',
-    metrics: { cost: '$$$', weight: '4–6 kg wiring', update: 'OTA per-VM', teams: '4–6 teams', boot: '25–40 s' },
+    metrics: { cost: 'Medium', update: 'OTA per-VM', teams: '4–6 teams', scale: 'New VM per workload' },
     nodes: [
       { label: 'VM: ADAS', icon: '🚗', color: '#dc2626', sub: 'Linux RTOS\n512 MB RAM' },
       { label: 'VM: IVI', icon: '🎵', color: '#7c3aed', sub: 'Android Auto\n2 GB RAM' },
@@ -35,12 +35,12 @@ const STAGES = [
   },
   {
     id: 'rhivos',
-    era: 'Today with RHIVOS',
+    era: 'RHIVOS approach',
     label: 'Containers on Linux Kernel',
-    year: '2024+',
+    year: 'Available now',
     color: '#ee0000',
     description: 'One RHIVOS kernel runs all workloads in Linux containers. cgroups v2 enforces strict CPU, memory, and I/O budgets. AutoSD provides the open-source upstream; RHIVOS adds ASIL-B certification.',
-    metrics: { cost: '$', weight: '1–2 kg wiring', update: 'OTA per-container', teams: '1 platform team', boot: '8–12 s' },
+    metrics: { cost: 'Lower', update: 'OTA per-container', teams: '1 platform team', scale: 'New container per feature' },
     nodes: [
       { label: 'ASIL-B Container', icon: '🛡', color: '#ee0000', sub: '--cpus 0.4\n--memory 384m' },
       { label: 'QM Container', icon: '🎵', color: '#7c3aed', sub: '--cpus 0.6\n--memory 1g' },
@@ -53,13 +53,13 @@ const STAGES = [
 ]
 
 const COMPARE_ROWS = [
-  { label: 'Hardware cost', ecu: '$$$$', vm: '$$$', rhivos: '$' },
-  { label: 'Wiring harness', ecu: '8–12 kg', vm: '4–6 kg', rhivos: '< 2 kg' },
-  { label: 'Boot time', ecu: '45–90 s', vm: '25–40 s', rhivos: '8–12 s' },
-  { label: 'OTA update', ecu: 'Recall', vm: 'Per-VM', rhivos: 'Per-container' },
-  { label: 'Isolation', ecu: 'Physical', vm: 'Hypervisor', rhivos: 'cgroups v2' },
-  { label: 'ASIL-B path', ecu: 'Per-chip cert', vm: 'Hypervisor cert', rhivos: 'Kernel cert' },
-  { label: 'Update downtime', ecu: '—', vm: 'Full VM reboot', rhivos: '< 500 ms' },
+  { label: 'Hardware cost trend', ecu: 'High — per-function chip', vm: 'Medium — fewer boards', rhivos: 'Lower — shared compute' },
+  { label: 'Wiring complexity', ecu: 'High — point-to-point', vm: 'Reduced — fewer boards', rhivos: 'Minimal — shared bus' },
+  { label: 'OTA update', ecu: 'Recall or dealer visit', vm: 'Whole VM swap', rhivos: 'Per-container, atomic' },
+  { label: 'Isolation mechanism', ecu: 'Physical silicon', vm: 'Hypervisor boundary', rhivos: 'Linux cgroups v2' },
+  { label: 'ASIL-B certification', ecu: 'Per-chip cert', vm: 'Hypervisor cert', rhivos: 'Single kernel cert' },
+  { label: 'Adding a new feature', ecu: 'New ECU hardware', vm: 'New VM image', rhivos: 'New container image' },
+  { label: 'Mixed criticality', ecu: 'Separate chips', vm: 'Separate VMs', rhivos: 'ASIL-B + QM containers' },
 ]
 
 export default function ArchitectureEvolution() {
@@ -185,8 +185,13 @@ export default function ArchitectureEvolution() {
 
       {/* Comparison table */}
       <div style={{ background: '#111', border: '1px solid #222', borderRadius: 10, overflow: 'hidden' }}>
-        <div style={{ padding: '12px 16px', borderBottom: '1px solid #222', fontSize: 11, fontWeight: 700, color: '#666', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-          Era comparison
+        <div style={{ padding: '12px 16px', borderBottom: '1px solid #222', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <span style={{ fontSize: 11, fontWeight: 700, color: '#666', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+            Architecture comparison
+          </span>
+          <span style={{ fontSize: 10, color: '#444', fontStyle: 'italic' }}>
+            Directional comparison — actual numbers depend on platform and OEM implementation
+          </span>
         </div>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
           <thead>

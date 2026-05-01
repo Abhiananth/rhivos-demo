@@ -226,7 +226,6 @@ export default function CombinedIsolation({ lastMsg, send }: Props) {
   }, [lastMsg])
 
   const anyAttack = st.cpu_attack || st.mem_attack || st.temporal_attack
-  const allAttack = st.cpu_attack && st.mem_attack && st.temporal_attack
   const latencyData = st.asil_latency.map((v, i) => ({ i, ms: Math.min(v, 50) }))
   const lastMs = st.asil_latency[st.asil_latency.length - 1]
 
@@ -238,16 +237,57 @@ export default function CombinedIsolation({ lastMsg, send }: Props) {
         background: '#0d0d0d', border: '1px solid #1e1e1e',
         borderRadius: 10, padding: '16px 20px',
       }}>
-        <div style={{ fontSize: 11, fontWeight: 700, color: '#ee0000', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>
-          RHIVOS Safety Isolation
-        </div>
-        <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 6 }}>
-          Can QM software hurt ASIL-B? Linux says no.
-        </div>
-        <div style={{ fontSize: 12, color: '#666', lineHeight: 1.7 }}>
-          RHIVOS uses four Linux kernel mechanisms to give ASIL-B its own guaranteed resource slice.
-          No matter what QM software does — burn CPU, leak memory, flood the network — the safety
-          core stays inside its performance envelope. Click <b style={{ color: '#ef4444' }}>Full Attack</b> to prove it.
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16 }}>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: '#ee0000', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>
+              RHIVOS Safety Isolation
+            </div>
+            <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 6 }}>
+              Can QM software hurt ASIL-B? Linux says no.
+            </div>
+            <div style={{ fontSize: 12, color: '#666', lineHeight: 1.7 }}>
+              RHIVOS uses four Linux kernel mechanisms to give ASIL-B its own guaranteed resource slice:
+              CPU quota, memory ceiling, scheduling priority, and network namespace.
+              No matter what QM software does — burn CPU, leak memory, flood the network — the safety
+              core stays inside its performance envelope.
+            </div>
+          </div>
+          {/* Prominent start button — always visible */}
+          <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8 }}>
+            {!st.running ? (
+              <button className="btn-primary" style={{ padding: '12px 24px', fontSize: 14, fontWeight: 800 }}
+                onClick={() => send('/iso/start')}>
+                ▶ Start Scenario
+              </button>
+            ) : (
+              <>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  {!(st.cpu_attack && st.mem_attack && st.temporal_attack)
+                    ? <button className="btn-danger" style={{ fontWeight: 800 }} onClick={() => send('/iso/attack/full')}>
+                        🚨 Full Attack
+                      </button>
+                    : <button className="btn-ghost" onClick={() => send('/iso/attack/stop')}>
+                        ✋ Stop All Attacks
+                      </button>
+                  }
+                  <button className="btn-ghost" onClick={() => send('/iso/stop')}>Stop</button>
+                </div>
+                <div style={{ display: 'flex', gap: 10 }}>
+                  <div style={{ textAlign: 'center' }}>
+                    <div style={{ fontSize: 20, fontWeight: 800, color: st.asil_deadline_misses === 0 ? '#4ade80' : '#ef4444' }}>
+                      {st.asil_deadline_misses}
+                    </div>
+                    <div style={{ fontSize: 9, color: '#555' }}>deadline<br/>misses</div>
+                  </div>
+                  <div style={{ width: 1, background: '#222' }} />
+                  <div style={{ textAlign: 'center' }}>
+                    <div style={{ fontSize: 20, fontWeight: 800, color: '#10b981' }}>{fmtUptime(st.asil_uptime_s)}</div>
+                    <div style={{ fontSize: 9, color: '#555' }}>ASIL-B<br/>uptime</div>
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
         </div>
       </div>
 
@@ -347,30 +387,13 @@ export default function CombinedIsolation({ lastMsg, send }: Props) {
         </div>
       </div>
 
-      {/* ── Attack controls + individual cards ────────────────────────────── */}
+      {/* ── Individual attack cards ────────────────────────────────────────── */}
       <div className="card">
         <div className="card-header">
-          <span className="card-title">Attack controls</span>
-          <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
-            {!st.running ? (
-              <button className="btn-primary" onClick={() => send('/iso/start')}>
-                ▶ Start Scenario
-              </button>
-            ) : (
-              <>
-                {!allAttack ? (
-                  <button className="btn-danger" onClick={() => send('/iso/attack/full')}>
-                    🚨 Full Attack — all 4 vectors
-                  </button>
-                ) : (
-                  <button className="btn-ghost" onClick={() => send('/iso/attack/stop')}>
-                    ✋ Stop All Attacks
-                  </button>
-                )}
-                <button className="btn-ghost" onClick={() => send('/iso/stop')}>Stop Scenario</button>
-              </>
-            )}
-          </div>
+          <span className="card-title">Individual attack controls</span>
+          <span style={{ marginLeft: 'auto', fontSize: 11, color: '#555' }}>
+            Or use 🚨 Full Attack above to trigger all simultaneously
+          </span>
         </div>
         <div className="card-body">
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
