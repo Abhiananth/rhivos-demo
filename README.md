@@ -1,4 +1,4 @@
-# automotive-linux-demo
+# automotive-safe-linux-demo
 
 A real-time web dashboard backed by actual Podman containers demonstrating how automotive Linux works — mixed criticality isolation, multi-chip container orchestration, and OTA updates with automatic rollback.
 
