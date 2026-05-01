@@ -33,6 +33,9 @@ _state = {
     "safe_state_active": False,
 }
 
+_monitor_task: asyncio.Task | None = None
+_fail_counts: dict = {}   # chip_id -> consecutive failure count
+
 
 def _chip_by_id(chip_id: str):
     return next((c for c in CHIPS if c["id"] == chip_id), None)
@@ -48,7 +51,16 @@ def _log(msg: str):
 
 
 async def start(broadcast_fn):
+    global _monitor_task
     loop = asyncio.get_event_loop()
+
+    # Stop any existing run first (idempotent start)
+    if _state["running"]:
+        _state["running"] = False
+        if _monitor_task:
+            _monitor_task.cancel()
+            _monitor_task = None
+        await asyncio.sleep(0.3)
 
     # clean up leftovers
     for chip in CHIPS:
@@ -88,25 +100,34 @@ async def start(broadcast_fn):
             _log(f"[{chip['id']}] Failed to start")
 
     await broadcast_fn({"type": "scenario2_started", "state": get_state()})
-    await _monitor_loop(broadcast_fn)
+    # Give containers 2s to fully initialise before monitoring starts
+    await asyncio.sleep(2.0)
+    _monitor_task = asyncio.create_task(_monitor_loop(broadcast_fn))
 
 
 async def _monitor_loop(broadcast_fn):
     """Poll all containers every 2 seconds and broadcast state."""
-    async with httpx.AsyncClient(timeout=1.5) as client:
+    async with httpx.AsyncClient(timeout=2.5) as client:
         while _state["running"]:
             for chip in CHIPS:
                 cid = chip["id"]
                 cs = _state["chips"][cid]
-                if cs["status"] in ("crashed", "safe_state"):
+                if cs["status"] in ("crashed", "safe_state", "restarting"):
+                    _fail_counts[cid] = 0
                     continue
                 try:
                     r = await client.get(f"http://localhost:{chip['port']}/health")
                     if r.status_code == 200:
                         cs["status"] = "running"
+                        _fail_counts[cid] = 0
                 except Exception:
                     if cs["status"] == "running":
-                        await _handle_crash(chip, broadcast_fn)
+                        _fail_counts[cid] = _fail_counts.get(cid, 0) + 1
+                        # Require 2 consecutive failures before declaring a crash
+                        # (prevents false positives during container warm-up)
+                        if _fail_counts[cid] >= 2:
+                            _fail_counts[cid] = 0
+                            await _handle_crash(chip, broadcast_fn)
 
             await broadcast_fn({"type": "scenario2_tick", "state": get_state()})
             await asyncio.sleep(2.0)
@@ -187,7 +208,11 @@ async def recover_safe_state(chip_id: str, broadcast_fn):
 
 
 async def stop(broadcast_fn):
+    global _monitor_task
     _state["running"] = False
+    if _monitor_task:
+        _monitor_task.cancel()
+        _monitor_task = None
     loop = asyncio.get_event_loop()
     for chip in CHIPS:
         await loop.run_in_executor(None, podman.remove_container, chip["name"])

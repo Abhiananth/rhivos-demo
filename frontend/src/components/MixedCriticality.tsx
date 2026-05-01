@@ -200,9 +200,11 @@ export default function MixedCriticality({ lastMsg, send }: Props) {
               <ResponsiveContainer width="100%" height={180}>
                 <LineChart data={ticks} margin={{ top: 4, right: 8, left: -16, bottom: 0 }}>
                   <XAxis dataKey="t" hide />
-                  <YAxis domain={[0, 'auto']} tick={{ fontSize: 10 }} />
+                  <YAxis domain={[0, (max: number) => Math.min(max, 150)]} tick={{ fontSize: 10 }} />
                   <Tooltip contentStyle={{ background: '#1e1e1e', border: '1px solid #2a2a2a', fontSize: 11 }}
-                    formatter={(v: number) => [`${v?.toFixed(2)} ms`]} labelFormatter={() => ''} />
+                    formatter={(v: number, name: string) => [
+                      v >= 2000 ? '⏱ THROTTLED (timeout)' : `${v?.toFixed(2)} ms`, name
+                    ]} labelFormatter={() => ''} />
                   <ReferenceLine y={10} stroke="#ef4444" strokeDasharray="4 2"
                     label={{ value: '10ms deadline', fill: '#ef4444', fontSize: 10 }} />
                   <Line type="monotone" dataKey="asil" stroke="#ef4444" dot={false} strokeWidth={2} name="ASIL-B" connectNulls />
@@ -211,7 +213,9 @@ export default function MixedCriticality({ lastMsg, send }: Props) {
               </ResponsiveContainer>
               <div style={{ display: 'flex', gap: 20, marginTop: 6, alignItems: 'center' }}>
                 <span style={{ fontSize: 11, color: '#ef4444' }}>— ASIL-B: {latest?.asil?.toFixed(1) ?? '—'}ms</span>
-                <span style={{ fontSize: 11, color: '#3b82f6' }}>— QM: {latest?.qm?.toFixed(1) ?? '—'}ms</span>
+                <span style={{ fontSize: 11, color: '#3b82f6' }}>
+                  — QM: {latest?.qm != null ? (latest.qm >= 2000 ? '⏱ THROTTLED (timeout)' : `${latest.qm.toFixed(1)}ms`) : '—'}
+                </span>
                 <span style={{ fontSize: 11, color: 'var(--text2)', marginLeft: 'auto' }}>
                   {cycles} samples · {asilMisses === 0 ? '✓ zero safety misses' : `⚠ ${asilMisses} safety misses`}
                 </span>

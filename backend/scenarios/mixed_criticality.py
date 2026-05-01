@@ -40,6 +40,8 @@ _state = {
 ASIL_DEADLINE_MS = 10.0
 QM_DEADLINE_MS   = 33.0
 
+_poll_task: asyncio.Task | None = None
+
 
 async def build_images():
     loop = asyncio.get_event_loop()
@@ -51,7 +53,16 @@ async def build_images():
 
 async def start(broadcast_fn):
     """Start containers and begin polling."""
+    global _poll_task
     loop = asyncio.get_event_loop()
+
+    # Idempotent: stop cleanly if already running
+    if _state["running"]:
+        _state["running"] = False
+        if _poll_task:
+            _poll_task.cancel()
+            _poll_task = None
+        await asyncio.sleep(0.3)
 
     # clean up any leftovers
     await loop.run_in_executor(None, podman.cleanup, ASIL_NAME, QM_NAME)
@@ -88,7 +99,7 @@ async def start(broadcast_fn):
                         "asil_cpus": "0.4 (40% reserved)",
                         "qm_cpus": "0.6 (60% ceiling)"})
 
-    await _poll_loop(broadcast_fn)
+    _poll_task = asyncio.create_task(_poll_loop(broadcast_fn))
 
 
 async def _poll_loop(broadcast_fn):
@@ -97,7 +108,7 @@ async def _poll_loop(broadcast_fn):
         while _state["running"]:
             ts = time.time()
             asil_lat = await _ping(client, ASIL_PORT)
-            qm_lat   = await _ping(client, QM_PORT)
+            qm_lat   = await _ping(client, QM_PORT, storm_active=_state["storm_active"])
 
             if asil_lat is not None:
                 _state["cycles"] += 1
@@ -128,13 +139,16 @@ async def _poll_loop(broadcast_fn):
             await asyncio.sleep(1.0)
 
 
-async def _ping(client: httpx.AsyncClient, port: int):
+async def _ping(client: httpx.AsyncClient, port: int, storm_active: bool = False):
     try:
         r = await client.get(f"http://localhost:{port}/health")
         if r.status_code == 200:
             return r.json().get("latency_ms")
     except Exception:
-        pass
+        # During storm, a QM timeout is expected — return a high latency value
+        # so the chart shows the impact rather than a gap
+        if storm_active and port == QM_PORT:
+            return 2000.0   # 2000ms = timed out, shown as a spike on chart
     return None
 
 
@@ -163,7 +177,11 @@ async def stop_storm(broadcast_fn):
 
 
 async def stop(broadcast_fn):
+    global _poll_task
     _state["running"] = False
+    if _poll_task:
+        _poll_task.cancel()
+        _poll_task = None
     loop = asyncio.get_event_loop()
     await loop.run_in_executor(None, podman.cleanup, ASIL_NAME, QM_NAME)
     await broadcast_fn({"type": "scenario1_stopped"})
