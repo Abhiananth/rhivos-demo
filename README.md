@@ -297,19 +297,6 @@ Shows: *"How does a car get a software update the same way a Kubernetes workload
 
 ---
 
-## Key RHIVOS differentiators (from the product deck)
 
-| Dimension | RHIVOS | Traditional proprietary (QNX etc.) |
-|---|---|---|
-| Safety certification | ASIL-B SEooC (exida certified) · continuous re-certification | One-time cert · fork and freeze |
-| CVE response | Patch → re-certify → OTA in days | 18-month recertification cycle |
-| Isolation | Linux kernel native (cgroups v2 + namespaces) | Hypervisor + proprietary safety monitor |
-| Hardware support | aarch64, x86, RISC-V · Renesas, Qualcomm, NXP, TI, RPi | Vendor-specific, often locked to one SoC family |
-| Source code | Fully open (AutoSD upstream) | Restricted, vendor-controlled |
-| Update downtime | Per-container, sub-second swap | Full VM or OS reboot |
-| Commercial model | $X/car/year, no upfront NRE | Fixed license per domain/version |
-| Talent pool | Any Linux engineer | Proprietary OS specialists only |
-
----
 
 *Part of a series. See also: [automotive-linux-simulations](https://github.com/Abhiananth/automotive-linux-simulations)*
