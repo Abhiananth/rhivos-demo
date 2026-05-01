@@ -16,19 +16,12 @@ import './App.css'
 export type WsMessage = { type: string; [key: string]: unknown }
 
 const TABS = [
-  { id: 'arch',   label: 'Architecture Evolution',  sub: 'Overview',    group: 'intro' },
-  { id: 'iso',    label: 'Isolation Suite',          sub: 'Combined',    group: 'isolation' },
-  { id: 'bc',     label: 'BlueChi Orchestration',   sub: 'Scenario 2',  group: 'orchestration' },
-  { id: 'boot',   label: 'Startup Dependencies',    sub: 'Scenario 5',  group: 'orchestration' },
-  { id: 'ipc',    label: 'Controlled IPC',          sub: 'Scenario 10', group: 'orchestration' },
-  { id: 'ota',    label: 'OS OTA Update',           sub: 'Scenario 3',  group: 'updates' },
-  { id: 'fod',    label: 'Feature-on-Demand',       sub: 'Scenario 8',  group: 'updates' },
-  { id: 'green',  label: 'Greenboot Health Gate',   sub: 'Scenario 6',  group: 'updates' },
-  // Individual isolation tabs kept for deep-dives
-  { id: 'mc',     label: 'CPU Isolation ↗',         sub: 'Deep-dive',   group: 'isolation' },
-  { id: 'mem',    label: 'Memory Isolation ↗',      sub: 'Deep-dive',   group: 'isolation' },
-  { id: 'temp',   label: 'Temporal ↗',              sub: 'Deep-dive',   group: 'isolation' },
-  { id: 'spatial',label: 'Spatial ↗',               sub: 'Deep-dive',   group: 'isolation' },
+  { id: 'arch',  label: 'Why RHIVOS?',          sub: '① Overview',      group: 'intro' },
+  { id: 'iso',   label: 'Safety Isolation',     sub: '② ASIL-B proof',  group: 'isolation' },
+  { id: 'bc',    label: 'Fleet Orchestration',  sub: '③ Self-healing',  group: 'orchestration' },
+  { id: 'ota',   label: 'OTA Updates',          sub: '④ At scale',      group: 'updates' },
+  { id: 'fod',   label: 'Feature-on-Demand',   sub: '⑤ Revenue',       group: 'updates' },
+  { id: 'green', label: 'Update Safety Net',    sub: '⑥ Greenboot',     group: 'updates' },
 ]
 
 const GROUP_COLORS: Record<string, string> = {
@@ -39,7 +32,7 @@ const GROUP_COLORS: Record<string, string> = {
 }
 
 export default function App() {
-  const [tab, setTab]         = useState('mc')
+  const [tab, setTab]         = useState('arch')
   const [ready, setReady]     = useState(false)
   const [building, setBuilding] = useState(false)
   const [lastMsg, setLastMsg] = useState<WsMessage | null>(null)
