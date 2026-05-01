@@ -15,6 +15,7 @@ sys.path.insert(0, os.path.dirname(__file__))
 from scenarios import (
     mixed_criticality, bluechi, ota, memory_isolation, startup_chain, greenboot,
     feature_on_demand, temporal_isolation, spatial_isolation, ipc_demo,
+    combined_isolation,
 )
 
 app = FastAPI(title="RHIVOS Demo API")
@@ -76,6 +77,7 @@ async def websocket_endpoint(ws: WebSocket):
             "scenario8": feature_on_demand.get_state(),
             "scenario9": spatial_isolation.get_state(),
             "scenario10": ipc_demo.get_state(),
+            "siso": combined_isolation.get_state(),
         }))
         while True:
             # just keep alive — all actions go through REST
@@ -366,3 +368,65 @@ async def s10_write():
 @app.get("/scenario10/state")
 async def s10_state():
     return ipc_demo.get_state()
+
+
+# ── Isolation Suite endpoints ─────────────────────────────────────────────────
+
+@app.post("/iso/start")
+async def iso_start():
+    asyncio.create_task(combined_isolation.start(broadcast))
+    return {"status": "starting"}
+
+@app.post("/iso/stop")
+async def iso_stop():
+    asyncio.create_task(combined_isolation.stop(broadcast))
+    return {"status": "stopping"}
+
+@app.post("/iso/attack/full")
+async def iso_full_attack():
+    asyncio.create_task(combined_isolation.full_attack(broadcast))
+    return {"status": "full attack triggered"}
+
+@app.post("/iso/attack/stop")
+async def iso_stop_attacks():
+    asyncio.create_task(combined_isolation.stop_all_attacks(broadcast))
+    return {"status": "attacks stopping"}
+
+@app.post("/iso/attack/cpu/start")
+async def iso_cpu_start():
+    asyncio.create_task(combined_isolation.start_cpu_attack(broadcast))
+    return {"status": "cpu attack starting"}
+
+@app.post("/iso/attack/cpu/stop")
+async def iso_cpu_stop():
+    asyncio.create_task(combined_isolation.stop_cpu_attack(broadcast))
+    return {"status": "cpu attack stopping"}
+
+@app.post("/iso/attack/mem/start")
+async def iso_mem_start():
+    asyncio.create_task(combined_isolation.start_mem_attack(broadcast))
+    return {"status": "mem attack starting"}
+
+@app.post("/iso/attack/mem/stop")
+async def iso_mem_stop():
+    asyncio.create_task(combined_isolation.stop_mem_attack(broadcast))
+    return {"status": "mem attack stopping"}
+
+@app.post("/iso/attack/temporal/start")
+async def iso_temp_start():
+    asyncio.create_task(combined_isolation.start_temporal_attack(broadcast))
+    return {"status": "temporal attack starting"}
+
+@app.post("/iso/attack/temporal/stop")
+async def iso_temp_stop():
+    asyncio.create_task(combined_isolation.stop_temporal_attack(broadcast))
+    return {"status": "temporal attack stopping"}
+
+@app.post("/iso/probe/spatial")
+async def iso_spatial():
+    asyncio.create_task(combined_isolation.run_spatial_probe(broadcast))
+    return {"status": "probing"}
+
+@app.get("/iso/state")
+async def iso_state():
+    return combined_isolation.get_state()

@@ -10,22 +10,25 @@ import FeatureOnDemand from './components/FeatureOnDemand'
 import SpatialIsolation from './components/SpatialIsolation'
 import IPCDemo from './components/IPCDemo'
 import ArchitectureEvolution from './components/ArchitectureEvolution'
+import CombinedIsolation from './components/CombinedIsolation'
 import './App.css'
 
 export type WsMessage = { type: string; [key: string]: unknown }
 
 const TABS = [
   { id: 'arch',   label: 'Architecture Evolution',  sub: 'Overview',    group: 'intro' },
-  { id: 'mc',     label: 'CPU Isolation',            sub: 'Scenario 1',  group: 'isolation' },
-  { id: 'mem',    label: 'Memory Isolation',         sub: 'Scenario 4',  group: 'isolation' },
-  { id: 'temp',   label: 'Temporal (PREEMPT_RT)',    sub: 'Scenario 7',  group: 'isolation' },
-  { id: 'spatial',label: 'Spatial (Namespaces)',     sub: 'Scenario 9',  group: 'isolation' },
+  { id: 'iso',    label: 'Isolation Suite',          sub: 'Combined',    group: 'isolation' },
   { id: 'bc',     label: 'BlueChi Orchestration',   sub: 'Scenario 2',  group: 'orchestration' },
   { id: 'boot',   label: 'Startup Dependencies',    sub: 'Scenario 5',  group: 'orchestration' },
   { id: 'ipc',    label: 'Controlled IPC',          sub: 'Scenario 10', group: 'orchestration' },
   { id: 'ota',    label: 'OS OTA Update',           sub: 'Scenario 3',  group: 'updates' },
   { id: 'fod',    label: 'Feature-on-Demand',       sub: 'Scenario 8',  group: 'updates' },
   { id: 'green',  label: 'Greenboot Health Gate',   sub: 'Scenario 6',  group: 'updates' },
+  // Individual isolation tabs kept for deep-dives
+  { id: 'mc',     label: 'CPU Isolation ↗',         sub: 'Deep-dive',   group: 'isolation' },
+  { id: 'mem',    label: 'Memory Isolation ↗',      sub: 'Deep-dive',   group: 'isolation' },
+  { id: 'temp',   label: 'Temporal ↗',              sub: 'Deep-dive',   group: 'isolation' },
+  { id: 'spatial',label: 'Spatial ↗',               sub: 'Deep-dive',   group: 'isolation' },
 ]
 
 const GROUP_COLORS: Record<string, string> = {
@@ -132,8 +135,9 @@ export default function App() {
 
       <main className="app-main">
         {tab === 'arch'    && <ArchitectureEvolution />}
-        {tab === 'mc'      && <MixedCriticality  lastMsg={lastMsg} send={send} />}
-        {tab === 'bc'      && <BlueChi            lastMsg={lastMsg} send={send} />}
+        {tab === 'iso'     && <CombinedIsolation  lastMsg={lastMsg} send={send} />}
+        {tab === 'mc'      && <MixedCriticality   lastMsg={lastMsg} send={send} />}
+        {tab === 'bc'      && <BlueChi             lastMsg={lastMsg} send={send} />}
         {tab === 'ota'     && <OTAUpdate          lastMsg={lastMsg} send={send} />}
         {tab === 'mem'     && <MemoryIsolation    lastMsg={lastMsg} send={send} />}
         {tab === 'boot'    && <StartupChain       lastMsg={lastMsg} send={send} />}
