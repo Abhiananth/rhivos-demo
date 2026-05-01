@@ -1,0 +1,15 @@
+# Python
+__pycache__/
+*.py[cod]
+.Python
+backend/.venv/
+
+# Node
+frontend/node_modules/
+frontend/dist/
+
+# OS
+.DS_Store
+
+# Secrets
+.env
