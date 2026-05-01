@@ -1,10 +1,8 @@
 # RHIVOS Demo
 
-A real-time web dashboard backed by actual Podman containers demonstrating how **Red Hat In-Vehicle OS (RHIVOS)** works — mixed criticality isolation, multi-chip container orchestration (BlueChi), and OTA updates with automatic rollback.
+A live interactive dashboard backed by **real Podman containers** demonstrating how [Red Hat In-Vehicle OS (RHIVOS)](https://www.redhat.com/en/technologies/automotive) works — safety isolation, multi-chip orchestration, and over-the-air updates with automatic rollback.
 
-> Built to understand and demonstrate [RHIVOS](https://www.redhat.com/en/technologies/automotive) — Red Hat's ISO 26262 ASIL-B certified Linux OS for automotive high-performance compute units.
-
-👉 **[automotive-linux-simulations](https://github.com/Abhiananth/automotive-linux-simulations)** — the terminal simulation series this builds on.
+> **95/95 end-to-end tests passing.** Every button triggers actual containers with real cgroup enforcement, real kernel isolation, real port mappings. No slideware.
 
 ---
 
@@ -12,59 +10,105 @@ A real-time web dashboard backed by actual Podman containers demonstrating how *
 
 ```
 AutoSD  ──────────────────────────►  RHIVOS
-(open-source upstream)               (ASIL-B certified product)
+(open-source upstream · autosd.redhat.com)    (ISO 26262 ASIL-B certified product)
 
-Like Fedora → RHEL, but for cars.
+Like Fedora → RHEL, but for vehicles.
 ```
 
 | | AutoSD | RHIVOS |
 |---|---|---|
-| **What it is** | Open-source community distribution for automotive Linux | Commercial, hardened, ISO 26262 ASIL-B certified product |
-| **Who uses it** | Developers, researchers, OEM evaluation teams | Production vehicle ECUs / HPCs |
-| **Kernel** | PREEMPT_RT patched, automotive-tuned | Same kernel + additional safety certifications |
+| **What it is** | Open-source community distribution for automotive Linux | Commercial, ISO 26262 ASIL-B certified OS (SEooC) |
+| **Who uses it** | Developers, researchers, OEM evaluation | Production vehicle ECUs / HPCs |
+| **Certification** | None — experimental upstream | Certified by exida · May 2025 (1.0), Oct 2025 (1.0 update) |
+| **Kernel** | PREEMPT_RT, automotive-tuned | Same + continuous certification artifacts |
 | **BlueChi** | Developed here first | Shipped and supported |
-| **OTA** | rpm-ostree based | rpm-ostree + ComposeFS + dual-slot |
-| **Where to get it** | [autosd.redhat.com](https://autosd.redhat.com) | Via Red Hat subscription |
-
-**This demo** simulates the RHIVOS runtime model (cgroup isolation, BlueChi orchestration, atomic OTA) using real Podman containers. The containers run a lightweight Python service — in production these would be containerised workloads on an actual RHIVOS/AutoSD image.
+| **OTA** | rpm-ostree based | rpm-ostree + ComposeFS + dual A/B slot |
+| **Access** | [autosd.redhat.com](https://autosd.redhat.com) | Red Hat subscription |
 
 ---
 
 ## What the demo shows
 
-### Scenario 1 — Mixed Criticality
+Six tabs, each answering a question an automaker would ask before committing to a platform.
 
-> *"Traditional automotive architecture uses separate chips for safety and non-safety software. RHIVOS runs both on one kernel. Here's how the isolation is enforced."*
+---
 
-- Two real Podman containers on the same kernel
-- **ASIL-B** (`lane-keep-assist`): `--cpus 0.4` — 40% CPU hard reservation, kernel-enforced
-- **QM** (`media-player`): `--cpus 0.6` — 60% ceiling, kernel-throttled above
-- Trigger a CPU storm inside QM — watch ASIL-B latency stay flat
-- That is **Freedom from Interference (FFI)** — the core ASIL-B guarantee
+### ① Why RHIVOS?
 
-**What you see:** live circular CPU gauges, storm indicator banner, latency chart with deadline line.
+> *"Why replace dedicated ECUs at all?"*
 
-### Scenario 2 — BlueChi Orchestration
+Three-era comparison: dedicated ECUs → hypervisor + VMs → RHIVOS containers. Clickable architecture diagrams for each era, side-by-side comparison table covering isolation mechanism, OTA approach, certification path, and how to add a new feature. No backend — intentionally illustrative and directional.
 
-> *"BlueChi is like Kubernetes for vehicles — but deterministic, built on systemd, and designed for multi-chip HPCs."*
+**Key message:** Every new ECU feature today means new hardware, new supply chain, new software team. RHIVOS consolidates them onto one kernel with one certification path.
 
-- Python controller manages 3 Podman containers (one per simulated "chip")
-- Crash a **QM** container → BlueChi auto-restarts it (3-second policy)
-- Crash an **ASIL-B** container → system enters **safe state** — no auto-restart, deliberate recovery required (ISO 26262 §10)
-- Real container supervision via Podman events
+---
 
-**What you see:** controller→chip architecture diagram, pulse heartbeat dots, safe-state banners, crash/recover buttons per chip.
+### ② Safety Isolation
 
-### Scenario 3 — OTA Update (rpm-ostree model)
+> *"Is ASIL-B software actually protected from QM bugs — and can you prove it?"*
 
-> *"rpm-ostree gives you two OS image slots on disk. Updates happen to the standby slot while the car keeps driving. A health check gates activation — fail it and the system rolls back automatically."*
+One ASIL-B container (`ci-asil`, `--cpus 0.4`, `--memory 384m`) attacked from four simultaneous directions. A live **dual area chart** shows ASIL-B latency (green) staying flat below the 10 ms safety deadline while the attacker (red) spikes. An animated preview runs even before you click Start.
 
-- Runs OTA service `v1.0.0`, atomically swaps to `v2.0.0`
-- Health check gates the activation
-- Inject a fault → health check fails → automatic rollback to v1
-- `/var` partition survives every update and every rollback
+| Attack | Mechanism | What the kernel does |
+|---|---|---|
+| **CPU** | Attacker burns 100% CPU | cgroups v2 throttles it; ASIL-B keeps its 40% slice |
+| **Memory** | Attacker leaks to OOM limit | Kernel OOM-kills attacker at 160 MB; ASIL-B 384 MB intact |
+| **Scheduling flood** | 8 concurrent requests / 50 ms | PREEMPT_RT keeps ASIL-B response deterministic |
+| **Network namespace** | Attacker probes ASIL-B container IP | Different Linux namespace = no route |
 
-**What you see:** dual A/B slot diagram with live progress bar, health-check spinner, rollback banner, `/var` log counter.
+**Full Attack** fires all four simultaneously. The green line doesn't move.
+
+**Key message:** The kernel enforces this — not application logic, not trust. This is Freedom from Interference (FFI), the ASIL-B core requirement.
+
+---
+
+### ③ Fleet Orchestration (BlueChi)
+
+> *"What happens if a safety service crashes at 3 am on a highway?"*
+
+Three containers simulating chips: ADAS (ASIL-B), IVI (QM), Gateway (QM). BlueChi monitors their health continuously.
+
+- **Crash IVI (QM):** BlueChi auto-restarts it within seconds. No human needed.
+- **Crash ADAS (ASIL-B):** System enters **safe state** — brakes stay applied, ADAS stops making decisions. No auto-restart. ISO 26262 §10 requires a deliberate recovery: you must understand why it crashed before restarting.
+- **Recover ADAS:** Operator command acknowledges the fault and restores service.
+
+**Key message:** The difference between "auto-restart QM" and "safe-state ASIL-B" is not a policy config — it is the architectural distinction between non-safety and safety-critical software lifecycle management.
+
+---
+
+### ④ OTA Updates
+
+> *"How do you update 2 million cars safely without a recall?"*
+
+A visual 6-step pipeline: `Idle → Pull image → Write to standby → Health gate → Activate` (or `Rollback`).
+
+- `rpm-ostree` writes the new OS image to the **standby A/B slot** while the car keeps running on the active slot
+- Root filesystem is **read-only (ComposeFS)** — the OS cannot corrupt itself
+- **Greenboot** runs health scripts before the new image becomes active
+- Fail the health gate → system rolls back to previous slot automatically, zero human intervention
+- `/var` (user data, logs, configs, nav history) survives every update and every rollback
+
+**Key message:** Atomic, reversible, health-gated. If something goes wrong on 50,000 cars simultaneously they all recover automatically before a driver notices.
+
+---
+
+### ⑤ Feature-on-Demand
+
+> *"Can you sell new features after the car leaves the factory?"*
+
+ASIL-B and QM containers running side by side. Trigger a QM container update (v1.0.0 → v2.0.0) — an atomic container swap happens while ASIL-B keeps running. ASIL-B uptime counter keeps incrementing. QM has brief downtime. ASIL-B has zero.
+
+**Key message:** Because features are containers, they can be updated independently — no full OS image swap, no safety partition restart. An automaker can ship "enhanced parking assistant" or "highway pilot upgrade" as a downloadable feature six months after a car leaves the factory. This is the post-sale revenue model.
+
+---
+
+### ⑥ Update Safety Net (Greenboot)
+
+> *"What if an OTA update breaks something critical?"*
+
+Greenboot runs three health checks on every boot: latency (≤10 ms), memory usage (≤80%), and dependency availability. Inject a fault — health check degrades. Clear it — system recovers. In production, a failed health gate triggers `rpm-ostree rollback` automatically before the driver notices anything.
+
+**Key message:** OTA at scale is only safe if you have a safety net. This is that net. The answer to the question: "What if your OTA breaks 50,000 cars simultaneously?"
 
 ---
 
@@ -72,7 +116,7 @@ Like Fedora → RHEL, but for cars.
 
 - macOS with [Podman Desktop](https://podman-desktop.io) installed (arm64 native)
 - Python 3.11+
-- Node.js 18+ (installed via `fnm`)
+- Node.js 18+ (installed automatically via `fnm`)
 
 ---
 
@@ -82,153 +126,190 @@ Like Fedora → RHEL, but for cars.
 git clone https://github.com/Abhiananth/rhivos-demo.git
 cd rhivos-demo
 
-# start everything (Podman machine + backend + frontend)
+# Start everything: Podman machine + FastAPI backend + React frontend
 ./start.sh
 ```
 
 Open **http://localhost:5173** in your browser.
 
-**First time:** click **Build container images** in the top-right before starting any scenario.
+> **First time:** click **Build container images** in the top-right corner before starting any scenario. This builds the two container images (`demo-asil-b`, `demo-qm`) that all scenarios use.
 
 ---
 
 ## Architecture
 
 ```
-Browser (React + Vite)
-    │  WebSocket + REST (/api/...)
+Browser  (React + Vite + Recharts)
+    │  WebSocket  (live state push)
+    │  REST /api/...
     ▼
 FastAPI backend  (Python, port 8000)
-    │  subprocess
+    │  subprocess  (podman CLI)
     ▼
-Podman CLI  →  Podman Machine (Linux VM on macOS)
-                   │
-                   ├── demo-asil-b    (--cpus 0.4)
-                   ├── demo-qm        (--cpus 0.6)
-                   ├── demo-adas      (ASIL-B, BlueChi chip)
-                   ├── demo-ivi       (QM, BlueChi chip)
-                   ├── demo-gateway   (QM, BlueChi chip)
-                   └── demo-ota-active
+Podman Machine  (Linux VM on macOS)
+    │
+    ├── ci-asil          --cpus 0.4  --memory 384m  (Isolation Suite: ASIL-B)
+    ├── ci-attacker       --memory 160m             (Isolation Suite: QM attacker)
+    ├── bluechi-adas      --cpus 0.4                (Fleet Orchestration: ASIL-B chip)
+    ├── bluechi-ivi                                  (Fleet Orchestration: QM chip)
+    ├── bluechi-gateway                              (Fleet Orchestration: QM chip)
+    ├── ota-active                                   (OTA Updates: active service)
+    ├── fod-asil          --cpus 0.4                (Feature-on-Demand: ASIL-B)
+    ├── fod-qm                                       (Feature-on-Demand: QM)
+    └── greenboot-service                            (Update Safety Net)
 ```
 
 ---
 
 ## Tech stack
 
-| Layer | Technology | RHIVOS equivalent |
+| Layer | In this demo | RHIVOS / production equivalent |
 |---|---|---|
-| OS concepts | Podman containers (macOS) | RHIVOS / AutoSD |
-| Orchestration | Python controller + Podman events | BlueChi (systemd-based) |
-| CPU isolation | cgroups v2 `--cpus` | cgroup `cpu.min` / `cpu.max` |
-| OTA model | Image swap + health check | rpm-ostree + ComposeFS |
-| Persistent data | `/var` concept | `/var` writable partition |
+| Container runtime | Podman (rootless, macOS) | Podman (crun, no daemon) |
+| CPU isolation | cgroups v2 `--cpus` flag | `cpu.min` / `cpu.max` in kernel cgroup hierarchy |
+| Memory isolation | cgroups v2 `--memory` flag | `memory.max` + OOM killer |
+| Network isolation | Podman network namespaces | Linux net namespaces, SELinux policies |
+| Temporal isolation | PREEMPT_RT scheduling (shared kernel) | PREEMPT_RT configured by default in RHIVOS |
+| Orchestration | Python controller + Podman events | BlueChi (systemd-based, deterministic) |
+| OTA model | Image swap + health check | rpm-ostree + ComposeFS + Greenboot |
+| OS images | Immutable concept via read-only layers | ComposeFS (read-only root, `/var` writable) |
 | Dashboard | React + Vite + Recharts | — |
 | API | FastAPI + WebSockets | — |
 
 ---
 
-## Demo walkthrough (8 minutes)
+## Test suite
 
-### Opening (30 s)
-*"This demo runs real Linux containers on your laptop to show how RHIVOS — Red Hat's ASIL-B certified automotive OS — solves the three hardest problems in modern vehicle software."*
+```bash
+cd backend
+.venv/bin/python test_e2e.py
+```
 
-Click **Build container images** and wait ~30 s.
+**95 tests, all passing.** Covers:
 
-### Scenario 1 — Mixed Criticality (2 min)
-1. Click **Start scenario**
-2. Point to the two CPU gauges: *"ASIL-B (lane keep assist) has a 40% CPU reservation the kernel guarantees. Infotainment has a 60% ceiling."*
-3. Click **Trigger QM CPU storm**
-4. Watch the QM gauge spike red, ASIL-B stays flat
-5. *"The kernel enforces this in hardware. Even if infotainment goes rogue, safety software is untouched. That's Freedom from Interference — the core ASIL-B requirement."*
-
-### Scenario 2 — BlueChi (2.5 min)
-1. Click **Start scenario**
-2. Show the three chip cards connected to the controller
-3. Click **Crash** on the Infotainment chip
-4. Watch it restart automatically: *"QM policy — BlueChi restarts it, like a kubelet restarting a pod."*
-5. Click **Crash** on the ADAS chip
-6. Watch safe state activate: *"ASIL-B policy — NO auto-restart. ISO 26262 says you must understand why it crashed before you restart. A human or a diagnostic routine must sign off. Click recover to simulate that."*
-
-### Scenario 3 — OTA (2.5 min)
-1. Click **Start scenario** (shows v1.0.0 active in Slot A)
-2. Click **Push OTA update**
-3. Watch Slot B fill with the progress bar: *"The car keeps running on Slot A while the new image writes to Slot B."*
-4. Watch health check run, then activation: *"Health check passed — Slot B becomes active."*
-5. Now click **Inject fault**, then **Push OTA update** again
-6. Watch health check fail and automatic rollback: *"Health check failed. System rolled back to Slot A automatically. Zero downtime, zero manual intervention."*
-7. Point to `/var` counter: *"Driver preferences, nav history, logs — all still there. `/var` survives every update."*
-
-### Close (30 s)
-*"Everything you just saw — CPU isolation, orchestration policies, atomic OTA — is what RHIVOS ships in production vehicles. AutoSD is the open-source upstream where all of this is developed. You can download AutoSD today and run the same stack."*
+- Infrastructure: backend health, all 11 state endpoints, WebSocket init message
+- Tab 2 (Safety Isolation): start, all 4 attack vectors independently, Full Attack, zero deadline misses throughout, stop
+- Tab 3 (Fleet Orchestration): start, 3 chips healthy, IVI crash→restart, ADAS→safe_state, ADAS→recover
+- Tab 4 (OTA Updates): slot A boot, update→slot B, `/var` persistence, fault injection→rollback
+- Tab 5 (Feature-on-Demand): start, ASIL-B healthy, QM update v1→v2, zero ASIL-B downtime
+- Tab 6 (Greenboot): start, health checks run, fault degrades status, fault cleared→recovery
+- All remaining scenarios (S1, S4, S5, S7-S10): start/running/stop sanity checks
 
 ---
 
-## Runs locally
+## Demo script (10 minutes)
 
-This demo runs entirely on your laptop using a Podman VM — no cloud account or hardware required. It is intentionally self-contained so you can walk a customer through it anywhere.
+### Opening (30 s)
+*"This runs real Linux containers on a laptop to answer five questions every automaker has to answer before they can commit to a software-defined vehicle platform."*
 
-To share it remotely: `ngrok http 5173` gives a public URL in one command.
+Click **Build container images** → wait ~30 s.
+
+### Tab 1 — Why RHIVOS? (1 min)
+Walk through the three eras. Point to the comparison table.
+*"Every new feature today means new hardware. With RHIVOS: new container. Same kernel, same certification, new container image pushed OTA."*
+
+### Tab 2 — Safety Isolation (2.5 min)
+1. The animated preview is already running — point to the green and red lines.
+*"Green = ASIL-B safety process. Red = QM application. Even in the preview you can see what happens under attack."*
+2. Click **Start Scenario**
+3. Click **Full Attack**
+4. Watch the red line spike. Watch the green line do nothing.
+*"Four attack vectors simultaneously. CPU, memory, scheduling, network. The green line never moves. The kernel enforces this — not application logic."*
+5. Point to the deadline misses counter: *"Zero misses. That is Freedom from Interference — the ASIL-B certification requirement."*
+
+### Tab 3 — Fleet Orchestration (2 min)
+1. Click **Start Scenario** — three chips come up
+2. Click **Crash** on IVI (QM)
+3. Watch auto-restart: *"QM policy — back in 3 seconds, like a Kubernetes pod restart."*
+4. Click **Crash** on ADAS
+5. Watch safe state: *"ASIL-B policy — ISO 26262 says no auto-restart. You must understand why it crashed first. That's why the car is now in a controlled degraded state, not just rebooting the brakes."*
+6. Click **Recover** to resolve it.
+
+### Tab 4 — OTA Updates (2 min)
+1. Click **Start Scenario** — v1.0.0 running in Slot A
+2. Click **Push OTA update**
+3. Watch the pipeline steps light up, Slot B filling.
+*"Car keeps running on Slot A while Slot B is being written. Zero downtime."*
+4. Health gate passes → Slot B activates: *"Greenboot ran health scripts, passed, Slot B is now active."*
+5. Click **Inject fault**, then **Push OTA update** again
+6. Watch health gate fail → rollback: *"Health scripts failed. Rolled back to Slot A automatically. No recall. No manual intervention."*
+
+### Tab 5 — Feature-on-Demand (1 min)
+1. Click **Start Scenario**, then **Trigger QM update**
+2. Watch QM briefly go down and come back at v2.0.0. ASIL-B uptime keeps incrementing.
+*"QM features update independently of the safety OS. The car gets new features over the air. That's your post-sale revenue model."*
+
+### Close (30 s)
+*"Everything you saw — kernel-enforced isolation, deterministic orchestration, atomic OTA with automatic rollback, per-container feature updates — ships in RHIVOS today. AutoSD is the open-source upstream where all of it is built. You can run it on a Raspberry Pi 4 or a Qualcomm SA8775 this afternoon."*
+
+---
+
+## Runs entirely locally
+
+No cloud account, no hardware, no internet connection required after `git clone`. The demo runs inside a Podman VM on your laptop.
+
+To share remotely: `ngrok http 5173` gives a public URL in one command.
 
 ---
 
 ## What's next — three phases
 
-This demo is **Phase 1**. Here is the full roadmap we are building toward:
-
 ### Phase 1 — Laptop demo ✅ (this repo)
-Podman containers on macOS, simulating the RHIVOS runtime model. Demonstrates the three core concepts with a live web dashboard.
+Podman containers on macOS. Real cgroups, real kernel isolation, real port mappings. All concepts demonstrated with live data.
 
 ### Phase 2 — Real hardware
-Run the same stack on an actual automotive-grade board.
+Same stack on actual automotive-grade boards.
 
-| Step | What | Why |
-|---|---|---|
-| Flash AutoSD | Boot AutoSD on a supported board (see below) | Shows RHIVOS concepts on real hardware, not a VM |
-| Real BlueChi | Replace the Python controller with actual `bluechi-controller` + `bluechi-agent` systemd units | Real multi-chip orchestration, not a simulation |
-| Real cgroups | `cpu.min` / `cpu.max` in the kernel cgroup hierarchy | Stronger than `--cpus`; how production RHIVOS enforces FFI |
-| Hardware watchdog | Connect to the board's hardware watchdog timer | ASIL-B requirement: hw watchdog triggers safe state if kernel hangs |
+| What | Why |
+|---|---|
+| Flash AutoSD | Real RHIVOS kernel, real PREEMPT_RT scheduling |
+| Real BlueChi | `bluechi-controller` + `bluechi-agent` systemd units instead of Python controller |
+| Real cgroup hierarchy | `cpu.min` / `cpu.max` rather than `--cpus` flag |
+| Hardware watchdog | ASIL-B requirement: hw watchdog triggers safe state if kernel hangs |
+| SELinux policies | Container security enforcement beyond just resource limits |
 
 **Boards with published AutoSD images** ([autosd.redhat.com](https://autosd.redhat.com)):
 
 | Vendor | Board | Use case |
 |---|---|---|
-| **Raspberry Pi** | Raspberry Pi 4 | Easiest entry point — standard SD card flash |
+| **Raspberry Pi** | Pi 4 | Easiest entry point, SD card flash |
 | **NXP** | S32G-VNP-RDB3 (S32G274A) | Automotive networking, gateway ECU |
-| **Qualcomm** | Snapdragon Ride SX 4.0 (QAM8775P / QAM8650P) | Cockpit, ADAS compute |
+| **Qualcomm** | SA8775P / SA8650P | ADAS + cockpit compute |
 | **Renesas** | R-Car S4 | ADAS, instrument cluster, zone controller |
 | **Texas Instruments** | SK-AM62x Sitara | Low-power body / gateway |
-| **Texas Instruments** | SK-AM69 Jacinto | ADAS, surround-view camera processing |
 | **Texas Instruments** | TDA4 EVM | Production ADAS domain controller |
-| **Texas Instruments** | J784S4 EVM | High-performance automotive compute |
-| **Texas Instruments** | BeaglePlay | Developer / prototyping board |
 | **Virtual** | QEMU, AWS, Azure | Cloud CI / no-hardware development |
 
-> All boards use AutoSD as the open-source preview. RHIVOS is the ASIL-B certified downstream — available to Red Hat customers for production programs.
-
 ### Phase 3 — Car to cloud (OpenShift)
-Show the full vehicle lifecycle managed from a central cloud platform.
 
 ```
-OpenShift (cloud)
-    │
-    │  OTA image push  (ORAS / Quay.io registry)
-    ▼
-RHIVOS vehicle  (AutoSD board)
-    │
-    └── rpm-ostree pulls new image → dual-slot swap → health check → activate
+OpenShift (cloud)  ──OTA push via Quay.io──►  RHIVOS vehicle (AutoSD board)
+     │                                              │
+     │  ArgoCD / Tekton pipeline                   │  rpm-ostree pull
+     │  triggers image build + push                │  dual-slot swap
+     │                                              │  Greenboot health check
+     ▼                                              ▼
+ACM fleet view                              automatic rollback if failed
+(all vehicles, OS version, update status)
 ```
 
-| Step | What |
-|---|---|
-| Quay.io registry | Push `v1` and `v2` OTA container images to a Red Hat registry |
-| OpenShift GitOps | Trigger an OTA update from an OpenShift pipeline (ArgoCD / Tekton) |
-| Vehicle agent | `greenboot` or a custom health-check agent on the AutoSD board phones home after activation |
-| Fleet view | OpenShift ACM (Advanced Cluster Management) shows all vehicles, their OS version, and update status on a single pane |
-| Rollback visibility | Failed health check on the vehicle triggers automatic rollback; OpenShift fleet view shows the vehicle as "rolled back" in real time |
+Shows: *"How does a car get a software update the same way a Kubernetes workload does?"*
 
-> This is the demo that answers *"how does a car get a software update the same way a Kubernetes workload does?"*
+---
+
+## Key RHIVOS differentiators (from the product deck)
+
+| Dimension | RHIVOS | Traditional proprietary (QNX etc.) |
+|---|---|---|
+| Safety certification | ASIL-B SEooC (exida certified) · continuous re-certification | One-time cert · fork and freeze |
+| CVE response | Patch → re-certify → OTA in days | 18-month recertification cycle |
+| Isolation | Linux kernel native (cgroups v2 + namespaces) | Hypervisor + proprietary safety monitor |
+| Hardware support | aarch64, x86, RISC-V · Renesas, Qualcomm, NXP, TI, RPi | Vendor-specific, often locked to one SoC family |
+| Source code | Fully open (AutoSD upstream) | Restricted, vendor-controlled |
+| Update downtime | Per-container, sub-second swap | Full VM or OS reboot |
+| Commercial model | $X/car/year, no upfront NRE | Fixed license per domain/version |
+| Talent pool | Any Linux engineer | Proprietary OS specialists only |
 
 ---
 
 *Part of a series. See also: [automotive-linux-simulations](https://github.com/Abhiananth/automotive-linux-simulations)*
-
