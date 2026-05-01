@@ -88,3 +88,26 @@
 .alert-warning { background: #422006; border-color: #78350f; color: #fde68a; }
 .alert-danger  { background: #450a0a; border-color: #7f1d1d; color: #fca5a5; }
 .alert-success { background: #052e16; border-color: #14532d; color: #86efac; }
+
+/* ── Buttons ── */
+.btn-primary {
+  padding: 9px 18px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600;
+  background: var(--accent); border: none; color: #fff;
+}
+.btn-primary:hover { opacity: 0.9; }
+.btn-ghost {
+  padding: 9px 18px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600;
+  background: var(--surface2); border: 1px solid var(--border); color: var(--text2);
+}
+.btn-ghost:hover { color: var(--text); }
+.btn-danger {
+  padding: 9px 18px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600;
+  background: #450a0a; border: 1px solid #7f1d1d; color: #fca5a5;
+}
+.btn-danger:hover { background: #7f1d1d; }
+.btn-danger:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ── stat (shared) ── */
+.stat { background: var(--surface2); border-radius: 6px; padding: 12px; }
+.stat-value { font-size: 22px; font-weight: 700; }
+.stat-label { font-size: 11px; color: var(--text2); margin-top: 2px; }
