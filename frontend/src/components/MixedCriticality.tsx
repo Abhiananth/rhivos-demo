@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState } from 'react'
 import { LineChart, Line, XAxis, YAxis, Tooltip, ReferenceLine, ResponsiveContainer } from 'recharts'
 import type { WsMessage } from '../App'
 
@@ -86,13 +86,15 @@ export default function MixedCriticality({ lastMsg, send }: Props) {
   const [cycles, setCycles]         = useState(0)
   const [asilCpu, setAsilCpu]       = useState(28)
   const [qmCpu, setQmCpu]           = useState(35)
+  const [errMsg, setErrMsg]         = useState<string | null>(null)
 
   useEffect(() => {
     if (!lastMsg) return
-    if (lastMsg.type === 'scenario1_started') setRunning(true)
+    if (lastMsg.type === 'scenario1_started') { setRunning(true); setErrMsg(null) }
     if (lastMsg.type === 'scenario1_stopped') { setRunning(false); setStorm(false); setAsilCpu(0); setQmCpu(0) }
     if (lastMsg.type === 'scenario1_storm_start') setStorm(true)
     if (lastMsg.type === 'scenario1_storm_stop')  setStorm(false)
+    if (lastMsg.type === 'error') setErrMsg((lastMsg as any).msg ?? 'Unknown error')
     if (lastMsg.type === 'scenario1_tick') {
       const m = lastMsg as any
       setTicks(prev => [...prev.slice(-59), { t: Date.now(), asil: m.asil_latency_ms ?? null, qm: m.qm_latency_ms ?? null }])
@@ -100,7 +102,6 @@ export default function MixedCriticality({ lastMsg, send }: Props) {
       setAsilMisses(m.asil_deadline_misses)
       setQmMisses(m.qm_deadline_misses)
       setCycles(m.cycles)
-      // simulate CPU usage visual
       setAsilCpu(m.storm_active ? 28 + Math.random() * 4 : 22 + Math.random() * 8)
       setQmCpu(m.storm_active ? 92 + Math.random() * 5 : 28 + Math.random() * 18)
     }
@@ -120,6 +121,18 @@ export default function MixedCriticality({ lastMsg, send }: Props) {
         </p>
       </div>
 
+      {/* error message */}
+      {errMsg && (
+        <div style={{ padding: '12px 16px', borderRadius: 8, background: '#450a0a', border: '1px solid #ef4444', display: 'flex', gap: 10, alignItems: 'center' }}>
+          <span style={{ fontSize: 18 }}>⚠</span>
+          <div>
+            <div style={{ fontWeight: 700, color: '#fca5a5', fontSize: 13 }}>Scenario failed to start</div>
+            <div style={{ fontSize: 12, color: '#f87171', marginTop: 2, fontFamily: 'monospace' }}>{errMsg}</div>
+          </div>
+          <button onClick={() => setErrMsg(null)} style={{ marginLeft: 'auto', background: 'none', border: 'none', color: '#9ca3af', cursor: 'pointer', fontSize: 18 }}>×</button>
+        </div>
+      )}
+
       {/* storm indicator */}
       <StormIndicator active={storm} />
 
@@ -136,7 +149,7 @@ export default function MixedCriticality({ lastMsg, send }: Props) {
             <div style={{ textAlign: 'center' }}>
               <CPUGauge pct={running ? asilCpu : 0} label="lane-keep-assist" color="#ef4444" protected={running ? true : undefined} />
               <div style={{ marginTop: 8, fontSize: 11, color: '#888' }}>
-                <code>--cpuset-cpus 0</code><br />Dedicated core — untouchable
+                <code>--cpus 0.4</code><br />40% hard reservation — kernel enforced
               </div>
             </div>
 

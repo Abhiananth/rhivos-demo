@@ -2,8 +2,12 @@
 Scenario 1 — Mixed Criticality
 Real Podman containers with real cgroup enforcement.
 
-  asil-b-container: --cpuset-cpus 0  (dedicated CPU core, physically isolated)
-  qm-container:     --cpus 0.6       (60% ceiling on remaining cores)
+  asil-b-container: --cpus 0.4  (40% CPU hard reservation — kernel enforced)
+  qm-container:     --cpus 0.6  (60% CPU ceiling on the same pool)
+
+Note: --cpuset-cpus is not available in rootless Podman on macOS (cpuset
+controller disabled in the user cgroup slice). --cpus uses the cpu controller
+which IS available and still demonstrates real kernel-level enforcement.
 
 We poll /health on the ASIL-B container every second and record the latency.
 A CPU stress can be triggered inside the QM container.
@@ -52,11 +56,11 @@ async def start(broadcast_fn):
     # clean up any leftovers
     await loop.run_in_executor(None, podman.cleanup, ASIL_NAME, QM_NAME)
 
-    # start ASIL-B on dedicated CPU core 0
+    # start ASIL-B with 40% CPU hard reservation
     ok = await loop.run_in_executor(None, lambda: podman.run_container(
         name=ASIL_NAME, image=ASIL_IMAGE,
         env={"SERVICE_NAME": "lane-keep-assist", "CRITICALITY": "ASIL-B"},
-        cpuset_cpus="0", port=8000, host_port=ASIL_PORT,
+        cpus=0.4, port=8000, host_port=ASIL_PORT,
     ))
     if not ok:
         await broadcast_fn({"type": "error", "msg": "Failed to start ASIL-B container"})
@@ -81,7 +85,7 @@ async def start(broadcast_fn):
     _state["cycles"] = 0
 
     await broadcast_fn({"type": "scenario1_started",
-                        "asil_cpuset": "0 (dedicated core)",
+                        "asil_cpus": "0.4 (40% reserved)",
                         "qm_cpus": "0.6 (60% ceiling)"})
 
     await _poll_loop(broadcast_fn)
