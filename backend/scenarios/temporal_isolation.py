@@ -95,12 +95,12 @@ async def start(broadcast):
     ok_safe = podman.run_container(
         SAFE_NAME, "demo-asil-b",
         env={"SERVICE_NAME": "RT-Safety"},
-        cpus=0.4, port=8080, host_port=SAFE_PORT,
+        cpus=0.4, port=8000, host_port=SAFE_PORT,
     )
     ok_normal = podman.run_container(
         NORMAL_NAME, "demo-asil-b",
         env={"SERVICE_NAME": "Normal-Task"},
-        port=8080, host_port=NORMAL_PORT,
+        port=8000, host_port=NORMAL_PORT,
     )
 
     if not ok_safe or not ok_normal:

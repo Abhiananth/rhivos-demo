@@ -77,7 +77,7 @@ async def start(broadcast):
     ok = podman.run_container(
         ASIL_NAME, "demo-asil-b",
         env={"SERVICE_NAME": "ADAS-Publisher"},
-        cpus=0.4, port=8080, host_port=ASIL_PORT,
+        cpus=0.4, port=8000, host_port=ASIL_PORT,
     )
     if not ok:
         _state["error"] = "Failed to start ASIL-B container. Run 'Build container images' first."

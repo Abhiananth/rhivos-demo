@@ -62,7 +62,7 @@ async def start(broadcast):
     ok_asil = podman.run_container(
         ASIL_NAME, "demo-asil-b",
         env={"SERVICE_NAME": "ADAS-Safety"},
-        cpus=0.4, port=8080, host_port=ASIL_PORT,
+        cpus=0.4, port=8000, host_port=ASIL_PORT,
     )
     if not ok_asil:
         _state["error"] = "Failed to start ASIL-B container. Run 'Build container images' first."
@@ -73,7 +73,7 @@ async def start(broadcast):
     ok_qm = podman.run_container(
         QM_NAME, "demo-asil-b",
         env={"SERVICE_NAME": "IVI-Media", "APP_VERSION": "v1.0.0"},
-        port=8080, host_port=QM_PORT,
+        port=8000, host_port=QM_PORT,
     )
     if not ok_qm:
         _state["error"] = "Failed to start QM IVI container."
@@ -142,7 +142,7 @@ async def push_update(broadcast):
     podman.run_container(
         QM_NAME, "demo-asil-b",
         env={"SERVICE_NAME": "IVI-Media", "APP_VERSION": "v2.0.0"},
-        port=8080, host_port=QM_PORT,
+        port=8000, host_port=QM_PORT,
     )
     await asyncio.sleep(1.5)
 

@@ -68,13 +68,13 @@ async def start(broadcast):
     ok_asil = podman.run_container(
         ASIL_NAME, "demo-asil-b",
         env={"SERVICE_NAME": "ADAS-Isolated"},
-        port=8080, host_port=ASIL_PORT,
+        port=8000, host_port=ASIL_PORT,
         network=NET_NAME,
     )
     ok_qm = podman.run_container(
         QM_NAME, "demo-asil-b",
         env={"SERVICE_NAME": "IVI-QM"},
-        port=8080, host_port=QM_PORT,
+        port=8000, host_port=QM_PORT,
     )
 
     if not ok_asil or not ok_qm:
