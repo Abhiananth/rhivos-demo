@@ -12,7 +12,7 @@ from fastapi.middleware.cors import CORSMiddleware
 # add backend dir to path so scenarios can import podman_client
 sys.path.insert(0, os.path.dirname(__file__))
 
-from scenarios import mixed_criticality, bluechi, ota, memory_isolation
+from scenarios import mixed_criticality, bluechi, ota, memory_isolation, startup_chain, greenboot
 
 app = FastAPI(title="RHIVOS Demo API")
 
@@ -67,6 +67,8 @@ async def websocket_endpoint(ws: WebSocket):
             "scenario2": bluechi.get_state(),
             "scenario3": ota.get_state(),
             "scenario4": memory_isolation.get_state(),
+            "scenario5": startup_chain.get_state(),
+            "scenario6": greenboot.get_state(),
         }))
         while True:
             # just keep alive — all actions go through REST
@@ -203,6 +205,55 @@ async def s4_leak_stop():
 @app.get("/scenario4/state")
 async def s4_state():
     return memory_isolation.get_state()
+
+
+# ── Scenario 5 endpoints ──────────────────────────────────────────────────────
+
+@app.post("/scenario5/start")
+async def s5_start():
+    asyncio.create_task(startup_chain.start(broadcast))
+    return {"status": "starting"}
+
+@app.post("/scenario5/start_fault")
+async def s5_start_fault():
+    asyncio.create_task(startup_chain.start_with_fault(broadcast))
+    return {"status": "starting with fault"}
+
+@app.post("/scenario5/stop")
+async def s5_stop():
+    asyncio.create_task(startup_chain.stop(broadcast))
+    return {"status": "stopping"}
+
+@app.get("/scenario5/state")
+async def s5_state():
+    return startup_chain.get_state()
+
+
+# ── Scenario 6 endpoints ──────────────────────────────────────────────────────
+
+@app.post("/scenario6/start")
+async def s6_start():
+    asyncio.create_task(greenboot.start(broadcast))
+    return {"status": "starting"}
+
+@app.post("/scenario6/stop")
+async def s6_stop():
+    asyncio.create_task(greenboot.stop(broadcast))
+    return {"status": "stopping"}
+
+@app.post("/scenario6/fault")
+async def s6_fault():
+    asyncio.create_task(greenboot.inject_fault(broadcast))
+    return {"status": "fault injected"}
+
+@app.post("/scenario6/clear_fault")
+async def s6_clear_fault():
+    asyncio.create_task(greenboot.clear_fault(broadcast))
+    return {"status": "fault cleared"}
+
+@app.get("/scenario6/state")
+async def s6_state():
+    return greenboot.get_state()
 
 
 # ── health ────────────────────────────────────────────────────────────────────

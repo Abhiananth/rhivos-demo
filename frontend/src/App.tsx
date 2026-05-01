@@ -3,15 +3,19 @@ import MixedCriticality from './components/MixedCriticality'
 import BlueChi from './components/BlueChi'
 import OTAUpdate from './components/OTAUpdate'
 import MemoryIsolation from './components/MemoryIsolation'
+import StartupChain from './components/StartupChain'
+import Greenboot from './components/Greenboot'
 import './App.css'
 
 export type WsMessage = { type: string; [key: string]: unknown }
 
 const TABS = [
-  { id: 'mc',  label: 'Mixed Criticality',    sub: 'Scenario 1' },
-  { id: 'bc',  label: 'BlueChi Orchestration', sub: 'Scenario 2' },
-  { id: 'ota', label: 'OTA Update',            sub: 'Scenario 3' },
-  { id: 'mem', label: 'Memory Isolation',      sub: 'Scenario 4' },
+  { id: 'mc',    label: 'Mixed Criticality',     sub: 'Scenario 1' },
+  { id: 'bc',    label: 'BlueChi Orchestration',  sub: 'Scenario 2' },
+  { id: 'ota',   label: 'OTA Update',             sub: 'Scenario 3' },
+  { id: 'mem',   label: 'Memory Isolation',       sub: 'Scenario 4' },
+  { id: 'boot',  label: 'Startup Dependencies',   sub: 'Scenario 5' },
+  { id: 'green', label: 'Greenboot Health Gate',  sub: 'Scenario 6' },
 ]
 
 export default function App() {
@@ -109,10 +113,12 @@ export default function App() {
       </div>
 
       <main className="app-main">
-        {tab === 'mc'  && <MixedCriticality lastMsg={lastMsg} send={send} />}
-        {tab === 'bc'  && <BlueChi          lastMsg={lastMsg} send={send} />}
-        {tab === 'ota' && <OTAUpdate        lastMsg={lastMsg} send={send} />}
-        {tab === 'mem' && <MemoryIsolation  lastMsg={lastMsg} send={send} />}
+        {tab === 'mc'    && <MixedCriticality lastMsg={lastMsg} send={send} />}
+        {tab === 'bc'    && <BlueChi          lastMsg={lastMsg} send={send} />}
+        {tab === 'ota'   && <OTAUpdate        lastMsg={lastMsg} send={send} />}
+        {tab === 'mem'   && <MemoryIsolation  lastMsg={lastMsg} send={send} />}
+        {tab === 'boot'  && <StartupChain     lastMsg={lastMsg} send={send} />}
+        {tab === 'green' && <Greenboot        lastMsg={lastMsg} send={send} />}
       </main>
     </div>
   )
