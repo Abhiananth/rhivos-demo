@@ -79,8 +79,8 @@ Like Fedora → RHEL, but for cars.
 ## Running the demo
 
 ```bash
-git clone https://github.com/Abhiananth/automotive-linux-demo.git
-cd automotive-linux-demo
+git clone https://github.com/Abhiananth/rhivos-demo.git
+cd rhivos-demo
 
 # start everything (Podman machine + backend + frontend)
 ./start.sh
@@ -165,8 +165,55 @@ Click **Build container images** and wait ~30 s.
 
 ## Runs locally
 
-This demo runs entirely on your laptop. To share it remotely see options in the [README appendix](https://github.com/Abhiananth/automotive-linux-demo#sharing) or ask about the OpenShift / cloud deployment path.
+This demo runs entirely on your laptop using a Podman VM — no cloud account or hardware required. It is intentionally self-contained so you can walk a customer through it anywhere.
+
+To share it remotely: `ngrok http 5173` gives a public URL in one command.
+
+---
+
+## What's next — three phases
+
+This demo is **Phase 1**. Here is the full roadmap we are building toward:
+
+### Phase 1 — Laptop demo ✅ (this repo)
+Podman containers on macOS, simulating the RHIVOS runtime model. Demonstrates the three core concepts with a live web dashboard.
+
+### Phase 2 — Real hardware
+Run the same stack on an actual automotive-grade board.
+
+| Step | What | Why |
+|---|---|---|
+| Flash AutoSD | Boot AutoSD on a Raspberry Pi 4 or an NXP i.MX8 board | Shows RHIVOS concepts on real hardware, not a VM |
+| Real BlueChi | Replace the Python controller with actual `bluechi-controller` + `bluechi-agent` systemd units | Real multi-chip orchestration, not a simulation |
+| Real cgroups | `cpu.min` / `cpu.max` in the kernel cgroup hierarchy | Stronger than `--cpus`; how production RHIVOS enforces FFI |
+| Hardware watchdog | Connect to the board's hardware watchdog timer | ASIL-B requirement: hw watchdog triggers safe state if kernel hangs |
+
+> AutoSD images for Raspberry Pi 4 and NXP i.MX8 are available at [autosd.redhat.com](https://autosd.redhat.com).
+
+### Phase 3 — Car to cloud (OpenShift)
+Show the full vehicle lifecycle managed from a central cloud platform.
+
+```
+OpenShift (cloud)
+    │
+    │  OTA image push  (ORAS / Quay.io registry)
+    ▼
+RHIVOS vehicle  (AutoSD board)
+    │
+    └── rpm-ostree pulls new image → dual-slot swap → health check → activate
+```
+
+| Step | What |
+|---|---|
+| Quay.io registry | Push `v1` and `v2` OTA container images to a Red Hat registry |
+| OpenShift GitOps | Trigger an OTA update from an OpenShift pipeline (ArgoCD / Tekton) |
+| Vehicle agent | `greenboot` or a custom health-check agent on the AutoSD board phones home after activation |
+| Fleet view | OpenShift ACM (Advanced Cluster Management) shows all vehicles, their OS version, and update status on a single pane |
+| Rollback visibility | Failed health check on the vehicle triggers automatic rollback; OpenShift fleet view shows the vehicle as "rolled back" in real time |
+
+> This is the demo that answers *"how does a car get a software update the same way a Kubernetes workload does?"*
 
 ---
 
 *Part of a series. See also: [automotive-linux-simulations](https://github.com/Abhiananth/automotive-linux-simulations)*
+
