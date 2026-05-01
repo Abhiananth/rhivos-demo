@@ -183,12 +183,27 @@ Run the same stack on an actual automotive-grade board.
 
 | Step | What | Why |
 |---|---|---|
-| Flash AutoSD | Boot AutoSD on a Raspberry Pi 4 or an NXP i.MX8 board | Shows RHIVOS concepts on real hardware, not a VM |
+| Flash AutoSD | Boot AutoSD on a supported board (see below) | Shows RHIVOS concepts on real hardware, not a VM |
 | Real BlueChi | Replace the Python controller with actual `bluechi-controller` + `bluechi-agent` systemd units | Real multi-chip orchestration, not a simulation |
 | Real cgroups | `cpu.min` / `cpu.max` in the kernel cgroup hierarchy | Stronger than `--cpus`; how production RHIVOS enforces FFI |
 | Hardware watchdog | Connect to the board's hardware watchdog timer | ASIL-B requirement: hw watchdog triggers safe state if kernel hangs |
 
-> AutoSD images for Raspberry Pi 4 and NXP i.MX8 are available at [autosd.redhat.com](https://autosd.redhat.com).
+**Boards with published AutoSD images** ([autosd.redhat.com](https://autosd.redhat.com)):
+
+| Vendor | Board | Use case |
+|---|---|---|
+| **Raspberry Pi** | Raspberry Pi 4 | Easiest entry point — standard SD card flash |
+| **NXP** | S32G-VNP-RDB3 (S32G274A) | Automotive networking, gateway ECU |
+| **Qualcomm** | Snapdragon Ride SX 4.0 (QAM8775P / QAM8650P) | Cockpit, ADAS compute |
+| **Renesas** | R-Car S4 | ADAS, instrument cluster, zone controller |
+| **Texas Instruments** | SK-AM62x Sitara | Low-power body / gateway |
+| **Texas Instruments** | SK-AM69 Jacinto | ADAS, surround-view camera processing |
+| **Texas Instruments** | TDA4 EVM | Production ADAS domain controller |
+| **Texas Instruments** | J784S4 EVM | High-performance automotive compute |
+| **Texas Instruments** | BeaglePlay | Developer / prototyping board |
+| **Virtual** | QEMU, AWS, Azure | Cloud CI / no-hardware development |
+
+> All boards use AutoSD as the open-source preview. RHIVOS is the ASIL-B certified downstream — available to Red Hat customers for production programs.
 
 ### Phase 3 — Car to cloud (OpenShift)
 Show the full vehicle lifecycle managed from a central cloud platform.
