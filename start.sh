@@ -1,12 +1,12 @@
 #!/bin/bash
-# start.sh — boots the full automotive demo
+# start.sh — boots the RHIVOS demo
 # Usage: ./start.sh
 
 set -e
 ROOT="$(cd "$(dirname "$0")" && pwd)"
 
 echo ""
-echo "  Automotive Linux Demo"
+echo "  RHIVOS Demo"
 echo "  ─────────────────────────────────────────────────"
 
 # ── 1. Podman machine ─────────────────────────────────────────────────────────

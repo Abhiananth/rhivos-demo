@@ -1,5 +1,5 @@
 """
-Automotive Demo — FastAPI backend
+RHIVOS Demo — FastAPI backend
 WebSocket hub + REST endpoints for all three scenarios.
 """
 import asyncio
@@ -14,7 +14,7 @@ sys.path.insert(0, os.path.dirname(__file__))
 
 from scenarios import mixed_criticality, bluechi, ota
 
-app = FastAPI(title="Automotive Demo API")
+app = FastAPI(title="RHIVOS Demo API")
 
 app.add_middleware(
     CORSMiddleware,
