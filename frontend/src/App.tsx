@@ -101,29 +101,32 @@ export default function App() {
         ))}
       </nav>
 
-      {/* AutoSD / RHIVOS stack context strip */}
+      {/* Technology stack strip */}
       <div style={{
         display: 'flex', alignItems: 'center', gap: 0,
-        background: '#0d0d0d', borderBottom: '1px solid #1e1e1e',
-        padding: '0 24px', fontSize: 11, color: '#555', overflowX: 'auto',
-        whiteSpace: 'nowrap'
+        background: '#0a0a0a', borderBottom: '1px solid #1a1a1a',
+        padding: '0 24px', fontSize: 10, overflowX: 'auto', whiteSpace: 'nowrap',
       }}>
+        <span style={{ color: '#333', marginRight: 12, fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.06em', flexShrink: 0 }}>
+          Tech stack:
+        </span>
         {[
-          { label: 'AutoSD', desc: 'Open-source upstream', color: '#6b7280' },
-          { label: 'RHIVOS', desc: 'ASIL-B certified OS', color: '#ee0000' },
-          { label: 'BlueChi', desc: 'Multi-chip orchestration', color: '#3b82f6' },
-          { label: 'cgroups v2', desc: 'Kernel isolation', color: '#10b981' },
-          { label: 'rpm-ostree', desc: 'Atomic OTA updates', color: '#f59e0b' },
+          { label: 'AutoSD',      desc: 'Upstream open-source OS',       color: '#6b7280', layer: 'OS' },
+          { label: 'RHIVOS',      desc: 'ASIL-B certified product',       color: '#ee0000', layer: 'OS' },
+          { label: 'cgroups v2',  desc: 'CPU / memory isolation',        color: '#10b981', layer: 'Kernel' },
+          { label: 'Podman',      desc: 'Rootless containers',           color: '#8b5cf6', layer: 'Runtime' },
+          { label: 'BlueChi',     desc: 'Multi-chip orchestration',      color: '#3b82f6', layer: 'Orchestration' },
+          { label: 'rpm-ostree',  desc: 'Atomic A/B OTA updates',       color: '#f59e0b', layer: 'Updates' },
+          { label: 'Greenboot',   desc: 'Health-gate + auto rollback',   color: '#22c55e', layer: 'Updates' },
         ].map((item, i) => (
           <div key={item.label} style={{ display: 'flex', alignItems: 'center' }}>
-            {i > 0 && <span style={{ padding: '0 8px', color: '#2a2a2a' }}>→</span>}
-            <div style={{ padding: '6px 0', display: 'flex', flexDirection: 'column', gap: 1 }}>
-              <span style={{ fontWeight: 700, color: item.color, fontSize: 10 }}>{item.label}</span>
-              <span style={{ color: '#444', fontSize: 10 }}>{item.desc}</span>
+            {i > 0 && <span style={{ padding: '0 6px', color: '#222' }}>·</span>}
+            <div style={{ padding: '5px 0', display: 'flex', gap: 4, alignItems: 'center' }}>
+              <span style={{ fontWeight: 700, color: item.color }}>{item.label}</span>
+              <span style={{ color: '#333' }}>{item.desc}</span>
             </div>
           </div>
         ))}
-        <span style={{ marginLeft: 'auto', color: '#333', fontSize: 10 }}>AutoSD is the open-source upstream · RHIVOS is the ASIL-B certified product built from it</span>
       </div>
 
       <main className="app-main">
